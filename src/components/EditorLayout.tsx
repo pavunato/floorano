@@ -18,8 +18,24 @@ interface Props {
 export default function EditorLayout({ value, onChange, layout }: Props) {
   const { ast, errors, warnings, overlaps } = useParser(value);
   const [activeFloor, setActiveFloor] = useState(0);
+
+  useEffect(() => {
+    const saved = parseInt(localStorage.getItem('fpdl-activeFloor') || '0', 10);
+    if (!isNaN(saved) && saved > 0) {
+      setActiveFloor(saved);
+    }
+  }, []);
   const [splitPos, setSplitPos] = useState(45); // percentage
+
+  useEffect(() => {
+    const saved = parseFloat(localStorage.getItem('fpdl-splitPos') || '');
+    if (!isNaN(saved) && saved >= 20 && saved <= 80) {
+      setSplitPos(saved);
+    }
+  }, []);
+
   const containerRef = useRef<HTMLDivElement>(null);
+  const latestSplit = useRef(splitPos);
 
   useEffect(() => {
     if (!ast || ast.floors.length === 0) {
@@ -35,6 +51,10 @@ export default function EditorLayout({ value, onChange, layout }: Props) {
     }
   }, [ast, activeFloor]);
 
+  useEffect(() => {
+    localStorage.setItem('fpdl-activeFloor', String(activeFloor));
+  }, [activeFloor]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     const isHorizontal = layout === 'horizontal';
@@ -48,13 +68,15 @@ export default function EditorLayout({ value, onChange, layout }: Props) {
       const currentPos = isHorizontal ? e.clientX : e.clientY;
       const containerSize = isHorizontal ? rect.width : rect.height;
       const diff = currentPos - startPos;
-      const newSplit = startSplit + (diff / containerSize) * 100;
-      setSplitPos(Math.min(Math.max(20, newSplit), 80));
+      const newSplit = Math.min(Math.max(20, startSplit + (diff / containerSize) * 100), 80);
+      setSplitPos(newSplit);
+      latestSplit.current = newSplit;
     };
 
     const handleMouseUp = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      localStorage.setItem('fpdl-splitPos', String(latestSplit.current));
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -120,12 +142,12 @@ export default function EditorLayout({ value, onChange, layout }: Props) {
             onMouseDown={handleMouseDown}
           />
 
-          {/* Editor on bottom */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Editor on bottom, error panel to the right */}
+          <div className="flex-1 flex flex-row overflow-hidden">
             <div className="flex-1 overflow-hidden">
               <CodeEditor value={value} onChange={onChange} errors={errors} warnings={warnings} activeFloorIndex={activeFloor} />
             </div>
-            <ErrorPanel errors={errors} warnings={warnings} />
+            <ErrorPanel errors={errors} warnings={warnings} direction="vertical" />
           </div>
         </>
       )}

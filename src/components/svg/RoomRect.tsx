@@ -206,13 +206,20 @@ export default function RoomRect({ room, planWidth, floorOrigin = { x: 0, y: 0 }
             case 'r': dx = sx + sw; dy = sy + doorOffset; break;
           }
 
+          // Swing depth = leaf size (full width for single, half for double, w/n for multi)
+          const swingDepth = child.doorStyle === 'single' ? doorW
+            : child.doorStyle === 'double' ? doorW / 2
+            : child.doorStyle === 'triple' ? doorW / 3
+            : child.doorStyle === 'quadruple' || child.doorStyle === 'quadfold' ? doorW / 4
+            : doorW * 0.15; // sliding: just a small margin
+
           const highlight = child.wall === 't'
-            ? { x: dx, y: dy, width: doorW, height: wallThickSvg + doorW }
+            ? { x: dx, y: dy - (child.swing === 'out' ? swingDepth : 0), width: doorW, height: wallThickSvg + swingDepth }
             : child.wall === 'b'
-              ? { x: dx, y: dy - doorW, width: doorW, height: wallThickSvg + doorW }
+              ? { x: dx, y: dy - (child.swing === 'out' ? 0 : swingDepth), width: doorW, height: wallThickSvg + swingDepth }
               : child.wall === 'l'
-                ? { x: dx, y: dy, width: wallThickSvg + doorW, height: doorW }
-                : { x: dx - doorW, y: dy, width: wallThickSvg + doorW, height: doorW };
+                ? { x: dx - (child.swing === 'out' ? swingDepth : 0), y: dy, width: wallThickSvg + swingDepth, height: doorW }
+                : { x: dx - (child.swing === 'out' ? 0 : swingDepth), y: dy, width: wallThickSvg + swingDepth, height: doorW };
 
           return (
             <g

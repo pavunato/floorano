@@ -17,7 +17,7 @@ export const TOWNHOUSE_SAMPLE =`plan "Townhouse" width=20000 depth=5000 wall=200
       plant 500*500 at=1200,3400
     }
     space "Garden" 1000* at=19000,0 walls=r wall=200 {
-      door 3000* class=r-1700 style=quadruple
+      door 3000* class=r-1700 style=quadfold swing=out
     }
   }
 

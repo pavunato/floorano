@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Toolbar from '@/components/Toolbar';
 import EditorLayout from '@/components/EditorLayout';
 import AIPromptDialog from '@/components/AIPromptDialog';
@@ -13,6 +13,13 @@ function HomeContent() {
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [layout, setLayout] = useState<LayoutDirection>('horizontal');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('fpdl-layout');
+    if (saved === 'horizontal' || saved === 'vertical') {
+      setLayout(saved);
+    }
+  }, []);
   const { t } = useI18n();
 
   const handleLoadSample = useCallback(() => {
@@ -20,7 +27,11 @@ function HomeContent() {
   }, []);
 
   const handleToggleLayout = useCallback(() => {
-    setLayout((prev) => (prev === 'horizontal' ? 'vertical' : 'horizontal'));
+    setLayout((prev) => {
+      const next = prev === 'horizontal' ? 'vertical' : 'horizontal';
+      localStorage.setItem('fpdl-layout', next);
+      return next;
+    });
   }, []);
 
   const handleAIGenerate = useCallback(async (prompt: string) => {

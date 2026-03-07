@@ -48,6 +48,7 @@ export default function DoorSymbol({ x, y, w, wallThick, wallSide, doorStyle, sw
       {doorStyle === 'double' && renderDoubleDoor(x, y, w, wallSide, swing)}
       {doorStyle === 'triple' && renderMultiDoor(x, y, w, wallSide, swing, 3)}
       {doorStyle === 'quadruple' && renderMultiDoor(x, y, w, wallSide, swing, 4)}
+      {doorStyle === 'quadfold' && renderQuadFoldDoor(x, y, w, wallSide, swing)}
       {doorStyle === 'sliding' && renderSlidingDoor(x, y, w, wallSide, isHorizontal)}
     </g>
   );
@@ -203,6 +204,81 @@ function renderMultiDoor(x: number, y: number, w: number, wallSide: DoorWall, sw
           </g>
         );
       })}
+    </g>
+  );
+}
+
+function renderQuadFoldDoor(x: number, y: number, w: number, wallSide: DoorWall, swing: DoorSwing) {
+  const leafSize = w / 4;
+  const outward = swing === 'out';
+
+  if (wallSide === 't' || wallSide === 'b') {
+    const inward = wallSide === 't' ? !outward : outward;
+    
+    const leftOuterHinge = { x, y };
+    const leftOuterClosed = { x: x + leafSize, y };
+    const leftOuterOpen = { x: x, y: y + (wallSide === 't' ? (outward ? -leafSize : leafSize) : (outward ? leafSize : -leafSize)) };
+    
+    const leftFoldHinge = { x: x + leafSize, y };
+    const leftFoldClosed = { x: x + leafSize * 2, y };
+    const leftFoldOpen = { x: x + leafSize, y: y + (wallSide === 't' ? (inward ? -leafSize : leafSize) : (inward ? leafSize : -leafSize)) };
+    const leftSweep: 0 | 1 = wallSide === 't' ? (inward ? 0 : 1) : (inward ? 1 : 0);
+    
+    const rightFoldHinge = { x: x + w - leafSize, y };
+    const rightFoldClosed = { x: x + leafSize * 2, y };
+    const rightFoldOpen = { x: x + w - leafSize, y: y + (wallSide === 't' ? (inward ? -leafSize : leafSize) : (inward ? leafSize : -leafSize)) };
+    const rightSweep: 0 | 1 = wallSide === 't' ? (inward ? 1 : 0) : (inward ? 0 : 1);
+    
+    const rightOuterHinge = { x: x + w, y };
+    const rightOuterClosed = { x: x + w - leafSize, y };
+    const rightOuterOpen = { x: x + w, y: y + (wallSide === 't' ? (outward ? -leafSize : leafSize) : (outward ? leafSize : -leafSize)) };
+    const rightOuterSweep: 0 | 1 = wallSide === 't' ? (outward ? 1 : 0) : (outward ? 0 : 1);
+    
+    return (
+      <g>
+        <path d={buildLinePath(leftOuterHinge, leftOuterOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
+        <path d={buildArcPath(leftOuterClosed, leftOuterOpen, leafSize, wallSide === 't' ? (outward ? 0 : 1) : (outward ? 1 : 0))} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+        <path d={buildLinePath(leftFoldHinge, leftFoldOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
+        <path d={buildArcPath(leftFoldClosed, leftFoldOpen, leafSize, leftSweep)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+        <path d={buildLinePath(rightFoldHinge, rightFoldOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
+        <path d={buildArcPath(rightFoldClosed, rightFoldOpen, leafSize, rightSweep)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+        <path d={buildLinePath(rightOuterHinge, rightOuterOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
+        <path d={buildArcPath(rightOuterClosed, rightOuterOpen, leafSize, rightOuterSweep)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+      </g>
+    );
+  }
+
+  const inward = wallSide === 'l' ? !outward : outward;
+  
+  const topOuterHinge = { x, y };
+  const topOuterClosed = { x, y: y + leafSize };
+  const topOuterOpen = { x: x + (wallSide === 'l' ? (outward ? -leafSize : leafSize) : (outward ? leafSize : -leafSize)), y };
+  
+  const topFoldHinge = { x, y: y + leafSize };
+  const topFoldClosed = { x, y: y + leafSize * 2 };
+  const topFoldOpen = { x: x + (wallSide === 'l' ? (inward ? -leafSize : leafSize) : (inward ? leafSize : -leafSize)), y: y + leafSize };
+  const topSweep: 0 | 1 = wallSide === 'l' ? (inward ? 1 : 0) : (inward ? 0 : 1);
+  
+  const bottomFoldHinge = { x, y: y + w - leafSize };
+  const bottomFoldClosed = { x, y: y + leafSize * 2 };
+  const bottomFoldOpen = { x: x + (wallSide === 'l' ? (inward ? -leafSize : leafSize) : (inward ? leafSize : -leafSize)), y: y + w - leafSize };
+  const bottomSweep: 0 | 1 = wallSide === 'l' ? (inward ? 0 : 1) : (inward ? 1 : 0);
+  
+  const bottomOuterHinge = { x, y: y + w };
+  const bottomOuterClosed = { x, y: y + w - leafSize };
+  const bottomOuterOpen = { x: x + (wallSide === 'l' ? (outward ? -leafSize : leafSize) : (outward ? leafSize : -leafSize)), y: y + w };
+  const bottomOuterSweep: 0 | 1 = wallSide === 'l' ? (outward ? 0 : 1) : (outward ? 1 : 0);
+
+  return (
+    <g>
+      <path d={buildLinePath(topOuterHinge, topOuterOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
+      <path d={buildArcPath(topOuterClosed, topOuterOpen, leafSize, wallSide === 'l' ? (outward ? 1 : 0) : (outward ? 0 : 1))} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+      <path d={buildLinePath(topFoldHinge, topFoldOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
+      <path d={buildArcPath(topFoldClosed, topFoldOpen, leafSize, topSweep)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+      <path d={buildLinePath(bottomFoldHinge, bottomFoldOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
+      <path d={buildArcPath(bottomFoldClosed, bottomFoldOpen, leafSize, bottomSweep)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+      <path d={buildLinePath(bottomOuterHinge, bottomOuterOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
+      <path d={buildArcPath(bottomOuterClosed, bottomOuterOpen, leafSize, bottomOuterSweep)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
     </g>
   );
 }

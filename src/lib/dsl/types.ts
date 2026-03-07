@@ -24,7 +24,7 @@ export interface FurnitureNode {
   col: number;
 }
 
-export type DoorStyle = 'single' | 'double' | 'triple' | 'quadruple' | 'sliding';
+export type DoorStyle = 'single' | 'double' | 'triple' | 'quadruple' | 'quadfold' | 'sliding';
 export type DoorWall = 't' | 'b' | 'l' | 'r';
 export type DoorSwing = 'in' | 'out';
 export type WallSides = DoorWall[];

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type Locale = 'en' | 'vi';
 
@@ -78,8 +78,19 @@ interface I18nContextValue {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState<Locale>('en');
-  const value = useMemo(() => ({ locale, setLocale, t: dictionary[locale] }), [locale]);
+  const [locale, setLocaleState] = useState<Locale>('en');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('fpdl-locale');
+    if (saved === 'en' || saved === 'vi') {
+      setLocaleState(saved);
+    }
+  }, []);
+  const setLocale = useCallback((l: Locale) => {
+    localStorage.setItem('fpdl-locale', l);
+    setLocaleState(l);
+  }, []);
+  const value = useMemo(() => ({ locale, setLocale, t: dictionary[locale] }), [locale, setLocale]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

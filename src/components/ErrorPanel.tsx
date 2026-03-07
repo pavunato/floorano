@@ -6,14 +6,20 @@ import { useI18n } from '@/lib/i18n';
 interface Props {
   errors: ParseError[];
   warnings?: DiagnosticMessage[];
+  direction?: 'horizontal' | 'vertical';
 }
 
-export default function ErrorPanel({ errors, warnings = [] }: Props) {
+export default function ErrorPanel({ errors, warnings = [], direction = 'horizontal' }: Props) {
   const { t } = useI18n();
   if (errors.length === 0 && warnings.length === 0) return null;
 
+  const isVertical = direction === 'vertical';
+
   return (
-    <div className="border-t px-4 py-2 max-h-32 overflow-auto" style={{ backgroundColor: errors.length > 0 ? '#fff3cd' : '#fefce8', borderColor: errors.length > 0 ? '#ffc107' : '#d97706' }}>
+    <div
+      className={`${isVertical ? 'border-l w-48 flex-shrink-0' : 'border-t max-h-32'} px-3 py-2 overflow-auto`}
+      style={{ backgroundColor: errors.length > 0 ? '#fff3cd' : '#fefce8', borderColor: errors.length > 0 ? '#ffc107' : '#d97706' }}
+    >
       {errors.length > 0 && (
         <>
           <div className="text-xs font-mono font-medium mb-1" style={{ color: '#856404' }}>

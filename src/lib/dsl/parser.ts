@@ -280,7 +280,7 @@ export function parse(input: string): { ast: PlanNode | null; errors: ParseError
     }
     if (props.style) {
       const s = props.style as string;
-      if (s === 'single' || s === 'double' || s === 'triple' || s === 'quadruple' || s === 'sliding') {
+      if (s === 'single' || s === 'double' || s === 'triple' || s === 'quadruple' || s === 'quadfold' || s === 'sliding') {
         doorStyle = s;
       }
     }
