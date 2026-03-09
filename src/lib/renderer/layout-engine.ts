@@ -14,10 +14,10 @@ const ROOM_DIM_ROWS = 5; // rows of dimension lines
 const ROOM_DIM_ROW_HEIGHT = 20;
 const ROOM_DIM_GAP = 8; // gap between plan edge and first row
 
-export function computeViewBox(plan: PlanNode, showRoomDimensions = false): ViewBox {
+export function computeViewBox(plan: PlanNode, showRoomDimensions = false, extraDoorRight = 0, extraDoorBottom = 0): ViewBox {
   const svgWidth = mmToSvg(plan.width, plan.width) + PADDING * 2;
-  const extraBottom = showRoomDimensions ? ROOM_DIM_GAP + ROOM_DIM_ROWS * ROOM_DIM_ROW_HEIGHT + 10 : 0;
-  const extraRight = showRoomDimensions ? ROOM_DIM_GAP + ROOM_DIM_ROWS * ROOM_DIM_ROW_HEIGHT + 10 : 0;
+  const extraBottom = showRoomDimensions ? ROOM_DIM_GAP + extraDoorBottom + ROOM_DIM_ROWS * ROOM_DIM_ROW_HEIGHT + 10 : 0;
+  const extraRight = showRoomDimensions ? ROOM_DIM_GAP + extraDoorRight + ROOM_DIM_ROWS * ROOM_DIM_ROW_HEIGHT + 10 : 0;
   const svgHeight = mmToSvg(plan.depth, plan.width) + PADDING * 2 + DIMENSION_SPACE + extraBottom;
   return { x: 0, y: 0, width: svgWidth + extraRight, height: svgHeight };
 }
@@ -64,5 +64,21 @@ export function toSvgSize(
   return {
     sw: mmToSvg(width, planWidth),
     sh: mmToSvg(height, planWidth),
+  };
+}
+
+// Inverse of mmToSvg: convert SVG units back to mm
+export function svgToMm(svg: number, planWidth: number): number {
+  const scale = 940 / planWidth;
+  return svg / scale;
+}
+
+// Inverse of toSvgCoords: convert SVG coordinates back to mm
+export function fromSvgCoords(
+  sx: number, sy: number, planWidth: number
+): { x: number; y: number } {
+  return {
+    x: svgToMm(sx - PADDING, planWidth),
+    y: svgToMm(sy - PADDING, planWidth),
   };
 }

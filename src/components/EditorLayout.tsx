@@ -6,6 +6,8 @@ import Preview from './Preview';
 import FloorTabs from './FloorTabs';
 import ErrorPanel from './ErrorPanel';
 import { useParser } from '@/hooks/useParser';
+import { SelectedElement, SourcePatch } from '@/lib/selection';
+import { patchRoomInSource } from '@/lib/dsl/patch-source';
 
 export type LayoutDirection = 'horizontal' | 'vertical';
 
@@ -13,11 +15,59 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   layout: LayoutDirection;
+  showRoomDimensions: boolean;
+  textScale: number;
+  exportSignal: { format: 'png' | 'svg'; id: number } | null;
+  onPlanNameChange: (name: string) => void;
 }
 
-export default function EditorLayout({ value, onChange, layout }: Props) {
+export default function EditorLayout({ value, onChange, layout, showRoomDimensions, textScale, exportSignal, onPlanNameChange }: Props) {
   const { ast, errors, warnings, overlaps } = useParser(value);
   const [activeFloor, setActiveFloor] = useState(0);
+  const [selection, setSelection] = useState<SelectedElement | null>(null);
+
+  // Clear selection when AST changes (user typed in editor)
+  const prevAstRef = useRef(ast);
+  useEffect(() => {
+    if (ast !== prevAstRef.current) {
+      prevAstRef.current = ast;
+      if (selection) {
+        // Validate selection still exists
+        if (!ast || selection.floorIndex >= ast.floors.length) {
+          setSelection(null);
+        } else {
+          const floor = ast.floors[selection.floorIndex];
+          if (selection.childIndex >= floor.children.length) {
+            setSelection(null);
+          } else {
+            // Update selection to match new AST values
+            const child = floor.children[selection.childIndex];
+            if ((child.type === 'room' || child.type === 'space') && child.line === selection.line) {
+              setSelection(prev => prev ? {
+                ...prev,
+                position: child.position,
+                size: child.size,
+                floorOrigin: floor.position,
+              } : null);
+            } else {
+              setSelection(null);
+            }
+          }
+        }
+      }
+    }
+  }, [ast, selection]);
+
+  const handleSourcePatch = useCallback((patch: SourcePatch) => {
+    const newSource = patchRoomInSource(value, patch);
+    if (newSource !== value) {
+      onChange(newSource);
+    }
+  }, [value, onChange]);
+
+  useEffect(() => {
+    onPlanNameChange(ast?.name || '');
+  }, [ast?.name, onPlanNameChange]);
 
   useEffect(() => {
     const saved = parseInt(localStorage.getItem('fpdl-activeFloor') || '0', 10);
@@ -28,11 +78,14 @@ export default function EditorLayout({ value, onChange, layout }: Props) {
   const [splitPos, setSplitPos] = useState(45); // percentage
 
   useEffect(() => {
-    const saved = parseFloat(localStorage.getItem('fpdl-splitPos') || '');
+    const key = layout === 'horizontal' ? 'fpdl-splitPos-h' : 'fpdl-splitPos-v';
+    const saved = parseFloat(localStorage.getItem(key) || '');
     if (!isNaN(saved) && saved >= 20 && saved <= 80) {
       setSplitPos(saved);
+    } else {
+      setSplitPos(45);
     }
-  }, []);
+  }, [layout]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const latestSplit = useRef(splitPos);
@@ -76,7 +129,8 @@ export default function EditorLayout({ value, onChange, layout }: Props) {
     const handleMouseUp = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-      localStorage.setItem('fpdl-splitPos', String(latestSplit.current));
+      const key = isHorizontal ? 'fpdl-splitPos-h' : 'fpdl-splitPos-v';
+      localStorage.setItem(key, String(latestSplit.current));
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -116,7 +170,17 @@ export default function EditorLayout({ value, onChange, layout }: Props) {
               />
             )}
             <div className="flex-1 overflow-hidden">
-              <Preview ast={ast} activeFloor={activeFloor} overlaps={overlaps} />
+              <Preview
+                ast={ast}
+                activeFloor={activeFloor}
+                overlaps={overlaps}
+                showRoomDimensions={showRoomDimensions}
+                textScale={textScale}
+                exportSignal={exportSignal}
+                selection={selection}
+                onSelect={setSelection}
+                onSourcePatch={handleSourcePatch}
+              />
             </div>
           </div>
         </>
@@ -132,7 +196,17 @@ export default function EditorLayout({ value, onChange, layout }: Props) {
               />
             )}
             <div className="flex-1 overflow-hidden">
-              <Preview ast={ast} activeFloor={activeFloor} overlaps={overlaps} />
+              <Preview
+                ast={ast}
+                activeFloor={activeFloor}
+                overlaps={overlaps}
+                showRoomDimensions={showRoomDimensions}
+                textScale={textScale}
+                exportSignal={exportSignal}
+                selection={selection}
+                onSelect={setSelection}
+                onSourcePatch={handleSourcePatch}
+              />
             </div>
           </div>
 
