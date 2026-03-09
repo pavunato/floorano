@@ -124,7 +124,38 @@ function getRightAnchor(blocks: MeasurableBlock[], edge: number, fallback: numbe
 export default function FloorPlanSVG({ plan, floor, floorIndex, overlaps = [], showRoomDimensions = false, textScale = 1 }: Props) {
   const [hovered, setHovered] = useState<HoverCardData | null>(null);
   const [hoveredDimension, setHoveredDimension] = useState<DimensionHover | null>(null);
-  const vb = computeViewBox(plan, showRoomDimensions);
+
+  // Calculate max outward door extension on right and bottom walls
+  // so dimension lines don't overlap with door swing arcs
+  let maxRightDoorExtension = 0;
+  let maxBottomDoorExtension = 0;
+  if (showRoomDimensions) {
+    for (const child of floor.children) {
+      if (child.type !== 'room' && child.type !== 'space') continue;
+      for (const item of child.children) {
+        if (item.type !== 'door' || item.swing !== 'out') continue;
+        // Leaf size depends on door style
+        const leafCount = item.doorStyle === 'double' ? 2 : item.doorStyle === 'triple' ? 3 : item.doorStyle === 'quadruple' || item.doorStyle === 'quadfold' ? 4 : 1;
+        const leafSvg = mmToSvg(item.width / leafCount, plan.width);
+        if (item.wall === 'r') {
+          const roomRight = mmToSvg(child.position.x + child.size.width, plan.width);
+          const floorRight = mmToSvg(floor.size.width, plan.width);
+          if (roomRight >= floorRight - 1) {
+            maxRightDoorExtension = Math.max(maxRightDoorExtension, leafSvg + 4);
+          }
+        }
+        if (item.wall === 'b') {
+          const roomBottom = mmToSvg(child.position.y + child.size.height, plan.width);
+          const floorBottom = mmToSvg(floor.size.height, plan.width);
+          if (roomBottom >= floorBottom - 1) {
+            maxBottomDoorExtension = Math.max(maxBottomDoorExtension, leafSvg + 4);
+          }
+        }
+      }
+    }
+  }
+
+  const vb = computeViewBox(plan, showRoomDimensions, maxRightDoorExtension, maxBottomDoorExtension);
   const padding = 30;
   const { sw: planW, sh: planH } = toSvgSize(plan.width, plan.depth, plan.width);
   const { sx: floorX, sy: floorY } = toSvgCoords(floor.position.x, floor.position.y, plan.width);
@@ -138,8 +169,10 @@ export default function FloorPlanSVG({ plan, floor, floorIndex, overlaps = [], s
   const blocks = showRoomDimensions ? toBlocks(floor.children) : [];
 
   // Compute dimension rows for bottom (horizontal) and right (vertical)
-  const dimRowGap = 8;
+  const dimRowGapBase = 8;
   const dimRowHeight = 20;
+  const rightDimStart = dimRowGapBase + maxRightDoorExtension;
+  const bottomDimStart = dimRowGapBase + maxBottomDoorExtension;
 
   // Get unique x and y edges from all blocks
   const xEdges = showRoomDimensions ? getEdges(blocks, 'x') : [];
@@ -370,7 +403,7 @@ export default function FloorPlanSVG({ plan, floor, floorIndex, overlaps = [], s
           {([hoveredDimension.start, hoveredDimension.end] as const).map((edge, i) => {
             const x = floorX + mmToSvg(edge, plan.width);
             const anchorY = floorY + mmToSvg(getBottomAnchor(blocks, edge, floor.size.height), plan.width);
-            const guideY = floorY + floorH + dimRowGap + dimRowHeight * (hoveredDimension.row + 1);
+            const guideY = floorY + floorH + bottomDimStart + dimRowHeight * (hoveredDimension.row + 1);
             return (
               <g key={`xhover-guide-${i}`}>
                 <line x1={x} y1={anchorY} x2={x} y2={guideY} stroke={theme.red} strokeWidth={1.5} strokeDasharray="4,2" />
@@ -380,9 +413,9 @@ export default function FloorPlanSVG({ plan, floor, floorIndex, overlaps = [], s
           })}
           <line
             x1={floorX + mmToSvg(hoveredDimension.start, plan.width)}
-            y1={floorY + floorH + dimRowGap + dimRowHeight * (hoveredDimension.row + 0.5)}
+            y1={floorY + floorH + bottomDimStart + dimRowHeight * (hoveredDimension.row + 0.5)}
             x2={floorX + mmToSvg(hoveredDimension.end, plan.width)}
-            y2={floorY + floorH + dimRowGap + dimRowHeight * (hoveredDimension.row + 0.5)}
+            y2={floorY + floorH + bottomDimStart + dimRowHeight * (hoveredDimension.row + 0.5)}
             stroke={theme.red}
             strokeWidth={2}
           />
@@ -394,7 +427,7 @@ export default function FloorPlanSVG({ plan, floor, floorIndex, overlaps = [], s
           {([hoveredDimension.start, hoveredDimension.end] as const).map((edge, i) => {
             const y = floorY + mmToSvg(edge, plan.width);
             const anchorX = floorX + mmToSvg(getRightAnchor(blocks, edge, floor.size.width), plan.width);
-            const guideX = floorX + floorW + dimRowGap + dimRowHeight * (hoveredDimension.row + 1);
+            const guideX = floorX + floorW + rightDimStart + dimRowHeight * (hoveredDimension.row + 1);
             return (
               <g key={`yhover-guide-${i}`}>
                 <line x1={anchorX} y1={y} x2={guideX} y2={y} stroke={theme.red} strokeWidth={1.5} strokeDasharray="4,2" />
@@ -403,9 +436,9 @@ export default function FloorPlanSVG({ plan, floor, floorIndex, overlaps = [], s
             );
           })}
           <line
-            x1={floorX + floorW + dimRowGap + dimRowHeight * (hoveredDimension.row + 0.5)}
+            x1={floorX + floorW + rightDimStart + dimRowHeight * (hoveredDimension.row + 0.5)}
             y1={floorY + mmToSvg(hoveredDimension.start, plan.width)}
-            x2={floorX + floorW + dimRowGap + dimRowHeight * (hoveredDimension.row + 0.5)}
+            x2={floorX + floorW + rightDimStart + dimRowHeight * (hoveredDimension.row + 0.5)}
             y2={floorY + mmToSvg(hoveredDimension.end, plan.width)}
             stroke={theme.red}
             strokeWidth={2}
@@ -419,8 +452,8 @@ export default function FloorPlanSVG({ plan, floor, floorIndex, overlaps = [], s
           {xDimensionItems.map((item, i) => {
             const x1 = floorX + mmToSvg(item.start, plan.width);
             const x2 = floorX + mmToSvg(item.end, plan.width);
-            const y = floorY + floorH + dimRowGap + dimRowHeight * (item.row + 0.5);
-            const yBot = floorY + floorH + dimRowGap + dimRowHeight * (item.row + 1);
+            const y = floorY + floorH + bottomDimStart + dimRowHeight * (item.row + 0.5);
+            const yBot = floorY + floorH + bottomDimStart + dimRowHeight * (item.row + 1);
             const startAnchorY = floorY + mmToSvg(getBottomAnchor(blocks, item.start, floor.size.height), plan.width);
             const endAnchorY = floorY + mmToSvg(getBottomAnchor(blocks, item.end, floor.size.height), plan.width);
             const isActive = hoveredDimension?.axis === 'x' && hoveredDimension.start === item.start && hoveredDimension.end === item.end && hoveredDimension.row === item.row;
@@ -445,7 +478,7 @@ export default function FloorPlanSVG({ plan, floor, floorIndex, overlaps = [], s
           {/* Circled reference numbers at bottom */}
           {xEdges.map((edge, i) => {
             const x = floorX + mmToSvg(edge, plan.width);
-            const y = floorY + floorH + dimRowGap + dimRowHeight * (maxBottomRow + 1) + 10;
+            const y = floorY + floorH + bottomDimStart + dimRowHeight * (maxBottomRow + 1) + 10;
             const isActive = hoveredDimension?.axis === 'x' && (hoveredDimension.start === edge || hoveredDimension.end === edge);
             return (
               <g key={`xref-${i}`}>
@@ -472,8 +505,8 @@ export default function FloorPlanSVG({ plan, floor, floorIndex, overlaps = [], s
           {yDimensionItems.map((item, i) => {
             const y1 = floorY + mmToSvg(item.start, plan.width);
             const y2 = floorY + mmToSvg(item.end, plan.width);
-            const x = floorX + floorW + dimRowGap + dimRowHeight * (item.row + 0.5);
-            const xRight = floorX + floorW + dimRowGap + dimRowHeight * (item.row + 1);
+            const x = floorX + floorW + rightDimStart + dimRowHeight * (item.row + 0.5);
+            const xRight = floorX + floorW + rightDimStart + dimRowHeight * (item.row + 1);
             const startAnchorX = floorX + mmToSvg(getRightAnchor(blocks, item.start, floor.size.width), plan.width);
             const endAnchorX = floorX + mmToSvg(getRightAnchor(blocks, item.end, floor.size.width), plan.width);
             const isActive = hoveredDimension?.axis === 'y' && hoveredDimension.start === item.start && hoveredDimension.end === item.end && hoveredDimension.row === item.row;
@@ -499,7 +532,7 @@ export default function FloorPlanSVG({ plan, floor, floorIndex, overlaps = [], s
           {/* Circled reference letters on right */}
           {yEdges.map((edge, i) => {
             const y = floorY + mmToSvg(edge, plan.width);
-            const x = floorX + floorW + dimRowGap + dimRowHeight * (maxRightRow + 1) + 10;
+            const x = floorX + floorW + rightDimStart + dimRowHeight * (maxRightRow + 1) + 10;
             const letter = String.fromCharCode(65 + i); // A, B, C...
             const isActive = hoveredDimension?.axis === 'y' && (hoveredDimension.start === edge || hoveredDimension.end === edge);
             return (

@@ -54,6 +54,9 @@ export function validateAll(ast: PlanNode): ValidationResult {
       for (let j = i + 1; j < roomsAndSpaces.length; j++) {
         const a = roomsAndSpaces[i];
         const b = roomsAndSpaces[j];
+        // Spaces can overlap with other spaces
+        if (a.type === 'space' && b.type === 'space') continue;
+
         const overlap = getRectOverlap(
           a.position.x, a.position.y, a.size.width, a.size.height,
           b.position.x, b.position.y, b.size.width, b.size.height,

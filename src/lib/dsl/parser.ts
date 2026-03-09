@@ -350,9 +350,7 @@ export function parse(input: string): { ast: PlanNode | null; errors: ParseError
     // Properties first (at=, color=, style=, label=), then optional size
     const props = parseProperties(siblingBlocks);
 
-    let size: Size = parentSize
-      ? { width: parentSize.width, height: parentSize.height }
-      : { width: 1000, height: 1000 };
+    let size: Size = { width: 1000, height: 1000 };
     if (current().type === 'size') {
       size = parseSize(parentSize);
     }
@@ -413,9 +411,7 @@ export function parse(input: string): { ast: PlanNode | null; errors: ParseError
 
     const props = parseProperties(siblingBlocks);
 
-    let size: Size = parentSize
-      ? { width: parentSize.width, height: parentSize.height }
-      : { width: 1000, height: 1000 };
+    let size: Size = { width: 1000, height: 1000 };
     if (current().type === 'size') {
       size = parseSize(parentSize);
     }

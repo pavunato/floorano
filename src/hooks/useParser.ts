@@ -31,7 +31,8 @@ export function useParser(source: string, debounceMs: number = 300): ParseResult
           const { warnings, overlaps } = validateAll(parsed.ast);
           setResult({ ...parsed, warnings, overlaps });
         } else {
-          setResult({ ...parsed, warnings: [], overlaps: [] });
+          // Parse errors — keep showing the last valid AST in the preview
+          setResult({ ast: lastValidAstRef.current, errors: parsed.errors, warnings: [], overlaps: [] });
         }
       } catch {
         setResult({ 

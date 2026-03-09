@@ -461,18 +461,27 @@ function fpdlAutocomplete(context: CompletionContext): CompletionResult | null {
       const rightX = sib.x + sib.w;
       const belowY = sib.y + sib.h;
 
+      const leftX = Math.max(0, sib.x - (sib.w || 1000));
+      const boostVal = nearest.indexOf(sib) === 0 ? 2 : 1;
+
       if (typedX === null) {
         options.unshift({
           label: `${rightX},${sib.y}`,
           type: 'text',
           detail: `right of "${sib.name}"`,
-          boost: nearest.indexOf(sib) === 0 ? 2 : 1,
+          boost: boostVal,
         });
         options.unshift({
           label: `${sib.x},${belowY}`,
           type: 'text',
           detail: `below "${sib.name}"`,
-          boost: nearest.indexOf(sib) === 0 ? 2 : 1,
+          boost: boostVal,
+        });
+        options.unshift({
+          label: `${leftX},${sib.y}`,
+          type: 'text',
+          detail: `left of "${sib.name}"`,
+          boost: boostVal,
         });
         continue;
       }
@@ -482,7 +491,7 @@ function fpdlAutocomplete(context: CompletionContext): CompletionResult | null {
           label: `${sib.y}`,
           type: 'text',
           detail: `right of "${sib.name}" (${rightX},${sib.y})`,
-          boost: nearest.indexOf(sib) === 0 ? 2 : 1,
+          boost: boostVal,
         });
       }
       if (typedX === `${sib.x}`) {
@@ -490,7 +499,15 @@ function fpdlAutocomplete(context: CompletionContext): CompletionResult | null {
           label: `${belowY}`,
           type: 'text',
           detail: `below "${sib.name}" (${sib.x},${belowY})`,
-          boost: nearest.indexOf(sib) === 0 ? 2 : 1,
+          boost: boostVal,
+        });
+      }
+      if (typedX === `${leftX}`) {
+        options.unshift({
+          label: `${sib.y}`,
+          type: 'text',
+          detail: `left of "${sib.name}" (${leftX},${sib.y})`,
+          boost: boostVal,
         });
       }
     }
@@ -581,9 +598,9 @@ function fpdlAutocomplete(context: CompletionContext): CompletionResult | null {
     options.push({ label: 'stair', type: 'keyword' });
   }
 
-  // Property names (available after a size or property context)
+  // Property names (available after a size or property context) — append = for easier typing
   for (const p of PROPERTY_NAMES) {
-    options.push({ label: p, type: 'property' });
+    options.push({ label: p, type: 'property', apply: `${p}=` });
   }
 
   // Filter by prefix

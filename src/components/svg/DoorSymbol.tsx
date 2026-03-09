@@ -102,70 +102,57 @@ function renderSingleDoor(x: number, y: number, w: number, wallSide: DoorWall, s
 }
 
 function renderDoubleDoor(x: number, y: number, w: number, wallSide: DoorWall, swing: DoorSwing) {
+  // Renders like the 2 middle wings of a quadfold: hinges at outer edges, arcs curving toward center
   const half = w / 2;
   const outward = swing === 'out';
 
-  if (wallSide === 't') {
+  if (wallSide === 't' || wallSide === 'b') {
+    const inward = wallSide === 't' ? !outward : outward;
+    const dy = wallSide === 't'
+      ? (inward ? -half : half)
+      : (inward ? half : -half);
+    const leftSweep: 0 | 1 = wallSide === 't' ? (inward ? 0 : 1) : (inward ? 1 : 0);
+    const rightSweep: 0 | 1 = wallSide === 't' ? (inward ? 1 : 0) : (inward ? 0 : 1);
+
     const leftHinge = { x, y };
     const leftClosed = { x: x + half, y };
-    const leftOpen = { x, y: y + (outward ? -half : half) };
+    const leftOpen = { x, y: y + dy };
     const rightHinge = { x: x + w, y };
     const rightClosed = { x: x + half, y };
-    const rightOpen = { x: x + w, y: y + (outward ? -half : half) };
+    const rightOpen = { x: x + w, y: y + dy };
+
     return (
       <g>
         <path d={buildLinePath(leftHinge, leftOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
-        <path d={buildArcPath(leftClosed, leftOpen, half, outward ? 0 : 1)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+        <path d={buildArcPath(leftClosed, leftOpen, half, leftSweep)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
         <path d={buildLinePath(rightHinge, rightOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
-        <path d={buildArcPath(rightClosed, rightOpen, half, outward ? 1 : 0)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
-      </g>
-    );
-  } else if (wallSide === 'b') {
-    const leftHinge = { x, y };
-    const leftClosed = { x: x + half, y };
-    const leftOpen = { x, y: y + (outward ? half : -half) };
-    const rightHinge = { x: x + w, y };
-    const rightClosed = { x: x + half, y };
-    const rightOpen = { x: x + w, y: y + (outward ? half : -half) };
-    return (
-      <g>
-        <path d={buildLinePath(leftHinge, leftOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
-        <path d={buildArcPath(leftClosed, leftOpen, half, outward ? 1 : 0)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
-        <path d={buildLinePath(rightHinge, rightOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
-        <path d={buildArcPath(rightClosed, rightOpen, half, outward ? 0 : 1)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
-      </g>
-    );
-  } else if (wallSide === 'l') {
-    const topHinge = { x, y };
-    const topClosed = { x, y: y + half };
-    const topOpen = { x: x + (outward ? -half : half), y };
-    const bottomHinge = { x, y: y + w };
-    const bottomClosed = { x, y: y + half };
-    const bottomOpen = { x: x + (outward ? -half : half), y: y + w };
-    return (
-      <g>
-        <path d={buildLinePath(topHinge, topOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
-        <path d={buildArcPath(topClosed, topOpen, half, outward ? 0 : 1)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
-        <path d={buildLinePath(bottomHinge, bottomOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
-        <path d={buildArcPath(bottomClosed, bottomOpen, half, outward ? 1 : 0)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
-      </g>
-    );
-  } else {
-    const topHinge = { x, y };
-    const topClosed = { x, y: y + half };
-    const topOpen = { x: x + (outward ? half : -half), y };
-    const bottomHinge = { x, y: y + w };
-    const bottomClosed = { x, y: y + half };
-    const bottomOpen = { x: x + (outward ? half : -half), y: y + w };
-    return (
-      <g>
-        <path d={buildLinePath(topHinge, topOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
-        <path d={buildArcPath(topClosed, topOpen, half, outward ? 1 : 0)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
-        <path d={buildLinePath(bottomHinge, bottomOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
-        <path d={buildArcPath(bottomClosed, bottomOpen, half, outward ? 0 : 1)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+        <path d={buildArcPath(rightClosed, rightOpen, half, rightSweep)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
       </g>
     );
   }
+
+  const inward = wallSide === 'l' ? !outward : outward;
+  const dx = wallSide === 'l'
+    ? (inward ? -half : half)
+    : (inward ? half : -half);
+  const topSweep: 0 | 1 = wallSide === 'l' ? (inward ? 1 : 0) : (inward ? 0 : 1);
+  const bottomSweep: 0 | 1 = wallSide === 'l' ? (inward ? 0 : 1) : (inward ? 1 : 0);
+
+  const topHinge = { x, y };
+  const topClosed = { x, y: y + half };
+  const topOpen = { x: x + dx, y };
+  const bottomHinge = { x, y: y + w };
+  const bottomClosed = { x, y: y + half };
+  const bottomOpen = { x: x + dx, y: y + w };
+
+  return (
+    <g>
+      <path d={buildLinePath(topHinge, topOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
+      <path d={buildArcPath(topClosed, topOpen, half, topSweep)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+      <path d={buildLinePath(bottomHinge, bottomOpen)} stroke={theme.ink} strokeWidth={1} fill="none" />
+      <path d={buildArcPath(bottomClosed, bottomOpen, half, bottomSweep)} stroke={theme.ink} strokeWidth={1} fill="none" strokeDasharray="3,2" />
+    </g>
+  );
 }
 
 function renderMultiDoor(x: number, y: number, w: number, wallSide: DoorWall, swing: DoorSwing, leafCount: number) {
