@@ -27,33 +27,10 @@ export default function Preview({ ast, activeFloor, overlaps = [], showRoomDimen
   const safeFloorIndex = ast && activeFloor >= 0 && activeFloor < ast.floors.length ? activeFloor : 0;
   const isAllFloors = activeFloor === -1;
 
-  // Handle export signals from toolbar
-  useEffect(() => {
-    if (!exportSignal || !ast || !containerRef.current) return;
-
-    if (exportSignal.format === 'png') {
-      handleExportPng();
-    } else {
-      handleExportSvg();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exportSignal?.id]);
-
-  if (!ast) {
-    return (
-      <div className="flex items-center justify-center h-full" style={{ backgroundColor: '#f5f0e8' }}>
-        <div className="text-center">
-          <p className="font-mono text-sm" style={{ color: '#5c5048' }}>{t.noValidPlan}</p>
-          <p className="font-mono text-xs mt-2" style={{ color: '#8b6f5e' }}>{t.writeOrGenerate}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const floorsToShow = isAllFloors ? ast.floors : [ast.floors[safeFloorIndex]];
-
   // Hit-test click coordinates against rooms/spaces in a floor
   const handleFloorClick = useCallback((e: React.MouseEvent, floor: FloorNode, floorIndex: number) => {
+    if (!ast) return;
+
     // Find the FloorPlanSVG's <svg> element inside this wrapper div
     const wrapper = e.currentTarget as HTMLElement;
     const svgEl = wrapper.querySelector('svg') as SVGSVGElement | null;
@@ -91,6 +68,31 @@ export default function Preview({ ast, activeFloor, overlaps = [], showRoomDimen
     // Clicked empty area — deselect
     onSelect(null);
   }, [ast, onSelect]);
+
+  // Handle export signals from toolbar
+  useEffect(() => {
+    if (!exportSignal || !ast || !containerRef.current) return;
+
+    if (exportSignal.format === 'png') {
+      handleExportPng();
+    } else {
+      handleExportSvg();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exportSignal?.id]);
+
+  if (!ast) {
+    return (
+      <div className="flex items-center justify-center h-full" style={{ backgroundColor: '#f5f0e8' }}>
+        <div className="text-center">
+          <p className="font-mono text-sm" style={{ color: '#5c5048' }}>{t.noValidPlan}</p>
+          <p className="font-mono text-xs mt-2" style={{ color: '#8b6f5e' }}>{t.writeOrGenerate}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const floorsToShow = isAllFloors ? ast.floors : [ast.floors[safeFloorIndex]];
 
   const handleExportSvg = () => {
     if (!containerRef.current) return;
